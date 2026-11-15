@@ -148,6 +148,52 @@ progress::-moz-progress-bar { background: #427956; border-radius: 8px; }
 .account-exit { border: 1px solid var(--line); background: var(--surface); }
 #auth-submit:disabled, .master:disabled { opacity: .65; cursor: wait; }
 #auth-retry, #auth-out { margin-top: 10px; }
+#sections { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+#daily { margin: 23px 0 6px; max-width: 730px; }
+.daily-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+.daily-head h3 { font: 750 27px/1.35 var(--serif); }
+.daily-meta { color: var(--muted); font-size: 13px; }
+#daily-progress { height: 7px; margin: 12px 0 14px; }
+.flash-face {
+  display: grid; justify-items: stretch; width: 100%; min-height: 235px; padding: 26px clamp(17px, 6vw, 47px);
+  border: 1px solid #c4d2c5; border-radius: 16px; background: var(--surface); color: var(--ink);
+  text-align: left; cursor: pointer; touch-action: pan-y; user-select: none; transition: border-color 140ms ease;
+  box-shadow: 0 10px 24px #1b463c0b; overflow-wrap: anywhere;
+}
+.flash-face:hover { border-color: #72927d; }
+.flash-face[aria-expanded="false"] { align-content: center; text-align: center; }
+.flash-term { display: block; font: 700 clamp(31px, 6vw, 56px)/1.1 Georgia, var(--serif); letter-spacing: -.028em; }
+.flash-back { display: block; margin-top: 17px; }
+.card-reading { display: block; padding-top: 10px; }
+.card-reading + .card-reading { margin-top: 12px; border-top: 1px solid var(--line); }
+.card-reading .quote { display: block; }
+.card-reading .quote > span { display: block; }
+.card-reading .quote > span + span { margin-top: 4px; }
+.card-reading .reading-source { display: block; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.card-reading .extension { display: block; margin-bottom: 5px; }
+.card-reading .back-reading { display: block; }
+.repeat-pill { color: #6a4c17; background: #f4ecd6; border-radius: 6px; padding: 2px 8px; font-size: 12px; }
+.daily-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.daily-actions button { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 9px; padding: 9px 13px; cursor: pointer; }
+.daily-actions .rating { flex: 1 1 130px; font-weight: 700; }
+.daily-actions .known { background: #e2eee3; border-color: #bdcfbf; }
+.daily-actions .unknown { background: #f6ebd0; border-color: #e4d1a4; }
+.daily-actions button:hover:not(:disabled), .vocab-toggle:hover { box-shadow: inset 0 0 0 1px #72927d; }
+.daily-actions button:disabled { opacity: .55; cursor: default; }
+#daily-status { min-height: 24px; margin-top: 9px; }
+#daily-empty { min-height: 130px; padding: 24px; text-align: left; }
+#daily-empty p + p { margin-top: 5px; }
+.vocab-toggle { display: block; width: 100%; min-height: 54px; padding: 6px 9px; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 7px; cursor: pointer; }
+.vocab-toggle[aria-expanded="true"] { background: #edf2e9; }
+.card .vocab-footer { margin-top: 10px; }
+#review-retry { cursor: pointer; }
+@media (max-width: 620px) {
+  #sections { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #daily { margin-top: 17px; }
+  .flash-face { min-height: 200px; }
+  .daily-actions .rating { flex-basis: calc(50% - 4px); }
+  .daily-actions .secondary { flex: 1 1 40%; }
+}
 </style>
 
   
@@ -182,7 +228,7 @@ progress::-moz-progress-bar { background: #427956; border-radius: 8px; }
         <div class="eyebrow"><span aria-hidden="true"></span><span id="coverage">考研英语二真题</span></div>
         <h1 id="study-title"><span lang="en">joiee</span>的北大<br>英语路</h1>
         <p>把单词和短语放回真题里记。辨清原文与选项的关系，再把会用的表达写进作文。</p>
-        <a class="begin" href="#review">开始复习<span aria-hidden="true">↓</span></a>
+        <a class="begin" href="#review" data-start-daily>开始复习<span aria-hidden="true">↓</span></a>
       </div>
       <aside class="sample" aria-labelledby="sample-title">
         <div class="sample-top"><span>短语示例</span><span>2011 阅读</span></div>
@@ -198,16 +244,38 @@ progress::-moz-progress-bar { background: #427956; border-radius: 8px; }
         <div><h2 id="review-heading">真题复习</h2><p id="summary">正在加载真题</p></div>
         <div class="progress-box" id="progress-box" hidden>
           <div class="progress-label"><span>词汇与短语</span><span id="progress-label"></span></div>
-          <progress id="progress" max="1" value="0" aria-label="词汇与短语掌握进度"></progress>
+          <progress id="progress" max="1" value="0" aria-label="词汇与短语熟识进度"></progress>
           <span class="progress-note" id="progress-note">正在读取云端进度…</span>
         </div>
       </div>
       <nav class="sections" aria-label="复习板块" id="sections">
-        <button type="button" data-view="words" aria-pressed="true">单词<span></span></button>
+        <button type="button" data-view="daily" aria-pressed="true">每日识记<span></span></button>
+        <button type="button" data-view="words" aria-pressed="false">单词<span></span></button>
         <button type="button" data-view="phrases" aria-pressed="false">短语用法<span></span></button>
         <button type="button" data-view="compare" aria-pressed="false">真题辨析<span></span></button>
         <button type="button" data-view="writing" aria-pressed="false">作文<span></span></button>
+        <button type="button" data-view="familiar" aria-pressed="false">熟识<span></span></button>
       </nav>
+      <section id="daily" aria-labelledby="daily-title" hidden>
+        <div class="daily-head">
+          <h3 id="daily-title">今日识记</h3>
+          <span id="daily-count" class="daily-meta"></span>
+        </div>
+        <progress id="daily-progress" aria-label="今日任务完成度" value="0" max="1"></progress>
+        <div class="empty" id="daily-empty" hidden>
+          <p id="daily-empty-message"></p>
+          <p id="daily-empty-detail" class="daily-meta"></p>
+          <button type="button" id="review-retry" hidden>重新加载</button>
+        </div>
+        <div id="flash-slot"></div>
+        <div class="daily-actions" id="daily-actions">
+          <button type="button" class="rating known" data-review-action="known">← 认识 · 明天复习</button>
+          <button type="button" class="rating unknown" data-review-action="unknown">不认识 · 再练三次 →</button>
+          <button type="button" class="secondary" data-review-action="undo">撤回</button>
+          <button type="button" class="secondary" data-review-action="familiar">熟识</button>
+        </div>
+        <p id="daily-status" class="daily-meta" role="status"></p>
+      </section>
       <div class="toolbar" id="toolbar" hidden>
         <label class="search">
           <span class="magnifier" aria-hidden="true"></span>
@@ -222,7 +290,7 @@ progress::-moz-progress-bar { background: #427956; border-radius: 8px; }
           <span id="filter-label">复习顺序</span>
           <select id="filter" aria-labelledby="filter-label"></select>
         </label>
-        <label class="pending" id="pending-field"><input id="pending" type="checkbox">只看待掌握</label>
+        <label class="pending" id="pending-field"><input id="pending" type="checkbox">只看未熟识</label>
       </div>
       <p class="results-info" id="results-info" role="status"></p>
       <div class="cards" id="cards"></div>
@@ -276,13 +344,13 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_qBzZL3aa0LiSw0l-5wq-MA_sDV8QP_Q
 
 const $ = (selector) => document.querySelector(selector);
 const tabs = [...document.querySelectorAll("[data-view]")];
-const state = { rows: [], years: [], view: "words", query: "", year: "", filter: "", pending: false };
+const state = { rows: [], years: [], view: "daily", query: "", year: "", filter: "", pending: false };
 const labels = {
   words: ["复习顺序", "全部", "先背", "先辨", "再补"],
   phrases: ["复习顺序", "全部", "先背", "先辨", "再补"],
   writing: ["题型", "全部", "小作文", "大作文"],
 };
-const mastered = new Set();
+
 
 
 function el(tag, className, text) {
@@ -339,29 +407,6 @@ function normalized(value) {
   return value.toLowerCase().replaceAll("’", "'").replace(/\s+/g, " ").trim();
 }
 
-function renderVocab(row) {
-  const card = el("article", "card");
-  const meta = el("div", "card-header");
-  const priority = el("span", "priority", row.priority);
-  priority.dataset.priority = row.priority;
-  meta.append(priority, el("span", null, row.kind), el("span", null, `${row.year} · 本卷 ${row.frequency} 次`));
-  const example = el("blockquote", "quote");
-  for (const excerpt of row.excerpt.split(" / ")) example.append(englishText("p", null, excerpt));
-
-  const footer = el("div", "card-footer");
-  const completed = mastered.has(row.id);
-  const button = el("button", "master", completed ? "✓ 已掌握" : "标记已掌握");
-  button.type = "button";
-  button.dataset.id = row.id;
-  button.disabled = pendingWrites.has(row.id);
-  button.setAttribute("aria-pressed", String(completed));
-  button.setAttribute("aria-label", `${completed ? "已掌握" : "标记已掌握"} ${row.title}`);
-  footer.append(el("span", null, row.source), button);
-  card.append(meta, englishText("h3", null, row.title), el("p", null, row.meaning),
-    example, field("延伸", row.extension, "extension"), footer);
-  return card;
-}
-
 function renderCompare(row) {
   const card = el("article", "card");
   const example = el("div", "quote");
@@ -381,45 +426,6 @@ function renderWriting(row) {
 }
 
 const renderCard = {words: renderVocab, phrases: renderVocab, compare: renderCompare, writing: renderWriting};
-
-function renderProgress(rows) {
-  const vocab = rows.filter((row) => row.id);
-  const total = vocab.length;
-  $("#progress-box").hidden = total === 0;
-  if (!total) return;
-  const done = vocab.filter((row) => mastered.has(row.id)).length;
-  $("#progress-label").textContent = `${done} / ${total} 已掌握`;
-  $("#progress").max = total;
-  $("#progress").value = done;
-}
-
-function render() {
-  const rows = scopeRows();
-  renderProgress(rows);
-  for (const tab of tabs) {
-    const isActive = tab.dataset.view === state.view;
-    tab.setAttribute("aria-pressed", String(isActive));
-    tab.querySelector("span").textContent = String(rows.filter((row) => row.view === tab.dataset.view).length);
-  }
-  const terms = normalized(state.query).split(/\s+/).filter(Boolean);
-  const isVocab = state.view === "words" || state.view === "phrases";
-  const current = rows.filter((row) => row.view === state.view
-    && (!state.filter || row.priority === state.filter || (row.kind && row.kind.startsWith(state.filter)))
-    && (!state.pending || !isVocab || !mastered.has(row.id))
-    && terms.every((term) => normalized(row.search).includes(term)));
-  $("#results-info").textContent = `显示 ${current.length} 条`;
-
-  if (!current.length) {
-    const empty = el("div", "empty");
-    const clear = el("button", null, "清除筛选");
-    clear.type = "button";
-    clear.dataset.clear = "true";
-    empty.append(el("p", null, "当前筛选下没有条目。"), clear);
-    $("#cards").replaceChildren(empty);
-    return;
-  }
-  $("#cards").replaceChildren(...current.map(renderCard[state.view]));
-}
 
 function configureFilters() {
   const choices = labels[state.view];
@@ -446,6 +452,10 @@ function clearFilters() {
 function switchView(view, { sample = false } = {}) {
   if (!tabs.some((tab) => tab.dataset.view === view)) return;
   state.view = view;
+  if (view === "familiar") {
+    state.year = "";
+    $("#year").value = "";
+  }
   clearFilters();
   if (sample) {
     state.year = $("#year").querySelector('option[value="2011"]') ? "2011" : "";
@@ -457,6 +467,7 @@ function switchView(view, { sample = false } = {}) {
 }
 
 function wireEvents() {
+  $("[data-start-daily]").addEventListener("click", () => switchView("daily"));
   $("#sections").addEventListener("click", (event) => {
     const button = event.target.closest("button[data-view]");
     if (button && button.dataset.view !== state.view) switchView(button.dataset.view);
@@ -480,7 +491,7 @@ function wireEvents() {
       $("#search").focus();
       return;
     }
-    void saveMark(button.dataset.id, button);
+    if (button.dataset.reviewId) void changeReview(button.dataset.cardAction, button.dataset.reviewId);
   });
 }
 
@@ -493,10 +504,7 @@ const cloud = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KE
 });
 let activeOwner;
 let cloudVersion = 0;
-let progressVersion = 0;
 let ready = false;
-const pendingWrites = new Set();
-let refreshTask = null;
 
 function syncMessage(message) {
   $("#progress-note").textContent = message;
@@ -511,8 +519,8 @@ function clearStudy() {
   state.rows = [];
   state.years = [];
   state.year = "";
-  mastered.clear();
-  pendingWrites.clear();
+  resetReview();
+  $(".skip").href = "#site-title";
   $("#cards").replaceChildren();
   $("#year").replaceChildren();
   $("#progress-box").hidden = true;
@@ -523,7 +531,6 @@ async function setOwner(owner, retry = false) {
   if (owner === activeOwner && !retry) return;
   const version = ++cloudVersion;
   activeOwner = owner;
-  refreshTask = null;
   clearStudy();
   $("#auth-panel").hidden = false;
   $("#auth-form").hidden = Boolean(owner);
@@ -568,81 +575,17 @@ async function setOwner(owner, retry = false) {
     $("#coverage").textContent = `已整理 ${state.years.length} 套真题`;
     $("#summary").textContent = `${state.years[0]}–${state.years.at(-1)} 年英语二`;
   }
-  state.view = "words";
+  initReviewEntries(state.rows);
+  state.view = "daily";
   clearFilters();
   $("#toolbar").hidden = false;
   ready = true;
   $("#auth-panel").hidden = true;
   $("#study").hidden = false;
+  $(".skip").href = "#review";
   $("#source").textContent = "词频按试卷原文、题干和选项统计。作文例句为复习延伸。";
   render();
-  void refreshProgress();
-}
-
-async function refreshProgress() {
-  if (!ready || pendingWrites.size || refreshTask) return;
-  const version = cloudVersion;
-  const marksVersion = progressVersion;
-  const owner = activeOwner;
-  const request = (async () => {
-    const ids = new Set();
-    const pageSize = 500;
-    for (let offset = 0; ; offset += pageSize) {
-      const {data, error} = await cloud.from("joiee_english_progress")
-        .select("item_id").eq("user_id", owner).eq("mastered", true)
-        .order("item_id").range(offset, offset + pageSize - 1);
-      if (error) throw error;
-      for (const row of data) ids.add(row.item_id);
-      if (data.length < pageSize) break;
-    }
-    return ids;
-  })();
-  refreshTask = request;
-  try {
-    const ids = await request;
-    if (version !== cloudVersion || marksVersion !== progressVersion || pendingWrites.size) return;
-    if (ids.size !== mastered.size || [...ids].some((id) => !mastered.has(id))) {
-      mastered.clear();
-      for (const id of ids) mastered.add(id);
-      render();
-    }
-    syncMessage("已与云端同步");
-  } catch {
-    if (version === cloudVersion && marksVersion === progressVersion) {
-      syncMessage("暂时无法读取云端进度");
-    }
-  } finally {
-    if (refreshTask === request) refreshTask = null;
-  }
-}
-
-async function saveMark(id, button) {
-  if (!ready || !id || pendingWrites.has(id)) return;
-  const version = cloudVersion;
-  const owner = activeOwner;
-  const next = !mastered.has(id);
-  pendingWrites.add(id);
-  progressVersion++;
-  button.disabled = true;
-  syncMessage("正在保存进度…");
-  try {
-    const {error} = await cloud.from("joiee_english_progress")
-      .upsert({user_id: owner, item_id: id, mastered: next}, {onConflict: "user_id,item_id"});
-    if (error) throw error;
-    if (version !== cloudVersion) return;
-    if (next) mastered.add(id);
-    else mastered.delete(id);
-    pendingWrites.delete(id);
-    render();
-    const replacement = [...document.querySelectorAll(".master")].find((item) => item.dataset.id === id);
-    (replacement || $("#pending")).focus({preventScroll: true});
-    if (!pendingWrites.size) syncMessage("已保存到云端");
-  } catch {
-    if (version !== cloudVersion) return;
-    pendingWrites.delete(id);
-    render();
-    syncMessage("保存失败，请重新点一次");
-  }
+  void refreshReview();
 }
 
 async function signIn(event) {
@@ -668,7 +611,7 @@ async function signIn(event) {
 }
 
 async function signOut() {
-  if (pendingWrites.size) {
+  if (reviewBusy) {
     syncMessage("正在保存进度，请稍候");
     return;
   }
@@ -683,6 +626,7 @@ async function signOut() {
 
 function start() {
   wireEvents();
+  wireReview();
   $("#auth-form").addEventListener("submit", signIn);
   $("#auth-retry").addEventListener("click", () => {
     if (activeOwner) void setOwner(activeOwner, true);
@@ -695,12 +639,478 @@ function start() {
     }
   });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") void refreshProgress();
+    if (document.visibilityState === "visible") void refreshReview();
   });
-  window.addEventListener("online", () => { void refreshProgress(); });
+  window.addEventListener("online", () => { void refreshReview(); });
   setInterval(() => {
-    if (document.visibilityState === "visible") void refreshProgress();
+    if (document.visibilityState === "visible") void refreshReview();
   }, 15000);
+}
+
+const DAILY_NEW_LIMIT = 20;
+const reviewCalendar = new Intl.DateTimeFormat("en", {
+  timeZone: "Asia/Shanghai",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function reviewDay(now = new Date()) {
+  const {year, month, day} = Object.fromEntries(reviewCalendar.formatToParts(now).map(({type, value}) => [type, value]));
+  return `${year}-${month}-${day}`;
+}
+
+function nextReviewDay(day) {
+  const [year, month, date] = day.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, date + 1)).toISOString().slice(0, 10);
+}
+
+function reviewId(term) {
+  return "term:" + term.normalize("NFKC").trim().toLowerCase().replaceAll("’", "'").replace(/\s+/g, " ");
+}
+
+function newReviewSnapshot(familiarIds) {
+  return {
+    day: "", queue: [], goal: 0,
+    items: Object.fromEntries(familiarIds.map((id) => [id, {familiar: true}])),
+    undo: null,
+  };
+}
+
+function makeDailyQueue(snapshot, day, entries) {
+  if (snapshot.day === day) return snapshot;
+  const entryIds = new Set(entries.map(({id}) => id));
+  const queue = [];
+  const selected = new Set();
+  function add(task) {
+    if (!entryIds.has(task.id) || selected.has(task.id) || snapshot.items[task.id]?.familiar) return;
+    queue.push(task);
+    selected.add(task.id);
+  }
+
+  const unseenNew = (task) => task.source === "new" && !task.repeats;
+  for (const task of snapshot.queue) {
+    if (!unseenNew(task)) add({...task, source: "due"});
+  }
+  for (const {id} of entries) {
+    if (snapshot.items[id]?.due && snapshot.items[id].due <= day) add({id, source: "due", repeats: 0});
+  }
+  for (const task of snapshot.queue) {
+    if (unseenNew(task)) add(task);
+  }
+  let slots = Math.max(0, DAILY_NEW_LIMIT - queue.filter((task) => task.source === "new").length);
+  for (const {id} of entries) {
+    if (!slots) break;
+    if (snapshot.items[id] || selected.has(id)) continue;
+    add({id, source: "new", repeats: 0});
+    slots--;
+  }
+  return {...snapshot, day, queue, goal: queue.length, undo: null};
+}
+
+function applyReview(snapshot, action, id) {
+  if (action === "undo") return snapshot.undo ? {...snapshot.undo, undo: null} : snapshot;
+
+  const first = snapshot.queue[0];
+  const isRating = action === "known" || action === "unknown";
+  if (isRating && first?.id !== id) return snapshot;
+  if (action === "familiar" && snapshot.items[id]?.familiar) return snapshot;
+  if (action === "restore" && !snapshot.items[id]?.familiar) return snapshot;
+
+  const {undo: _undo, ...previous} = snapshot;
+  const next = {
+    ...previous, queue: [...previous.queue], items: {...previous.items}, undo: previous,
+  };
+  if (action === "familiar") {
+    next.items[id] = {familiar: true};
+    next.queue = next.queue.filter((task) => task.id !== id);
+  } else if (action === "restore") {
+    next.items[id] = {due: snapshot.day};
+    next.queue.push({id, source: "due", repeats: 0});
+    next.goal++;
+  } else if (isRating) {
+    next.queue.shift();
+    if (first.repeats > 1) {
+      next.queue.push({...first, repeats: first.repeats - 1});
+    } else if (!first.repeats && action === "unknown") {
+      next.queue.push({...first, repeats: 3});
+    } else {
+      next.items[id] = {due: nextReviewDay(snapshot.day)};
+    }
+  } else {
+    return snapshot;
+  }
+  return next;
+}
+
+function cardReading(row) {
+  const section = el("span", "card-reading");
+  const detail = el("span", "back-reading", row.meaning);
+  const quote = el("span", "quote");
+  for (const excerpt of row.excerpt.split(" / ")) quote.append(englishText("span", null, excerpt));
+  const extension = el("span", "extension");
+  extension.append(el("span", "field-name", "拓展"), document.createTextNode(row.extension));
+  const source = el("span", "reading-source", `${row.year} · ${row.source} · 本卷 ${row.frequency} 次`);
+  section.append(detail, quote, extension, source);
+  return section;
+}
+
+function revealButton(button, back) {
+  button.setAttribute("aria-expanded", "false");
+  back.hidden = true;
+  button.addEventListener("click", () => {
+    if (performance.now() < Number(button.dataset.draggedUntil)) return;
+    back.hidden = !back.hidden;
+    button.setAttribute("aria-expanded", String(!back.hidden));
+  });
+}
+
+function renderVocab(row) {
+  const card = el("article", "card");
+  const heading = el("h3");
+  const reveal = el("button", "vocab-toggle");
+  reveal.type = "button";
+  reveal.append(englishText("span", null, row.title));
+  heading.append(reveal);
+  const back = el("div");
+  const footer = el("div", "card-footer vocab-footer");
+  const id = reviewId(row.title);
+  const familiar = isFamiliar(id);
+  const button = el("button", "master", familiar ? "移出熟识" : "熟识");
+  button.type = "button";
+  button.dataset.reviewId = id;
+  button.dataset.cardAction = familiar ? "restore" : "familiar";
+  button.disabled = !reviewRecord || reviewBusy;
+  button.setAttribute("aria-label", `${button.textContent} ${row.title}`);
+  footer.append(el("span", null, `${row.priority} · ${row.kind}`), button);
+  back.append(cardReading(row), footer);
+  revealButton(reveal, back);
+  card.append(heading, back);
+  return card;
+}
+
+function uniqueVocab(rows) {
+  return [...new Map(rows.filter((row) => row.id).map((row) => [reviewId(row.title), row])).values()];
+}
+
+function renderProgress(rows) {
+  const vocab = uniqueVocab(rows);
+  const total = vocab.length;
+  $("#progress-box").hidden = !total;
+  if (!total) return;
+  const count = vocab.filter(({title}) => isFamiliar(reviewId(title))).length;
+  $("#progress-label").textContent = `${count} / ${total} 熟识`;
+  $("#progress").max = total;
+  $("#progress").value = count;
+}
+
+function render() {
+  const daily = state.view === "daily";
+  const familiar = state.view === "familiar";
+  const rows = daily ? state.rows : scopeRows();
+  renderProgress(rows);
+  for (const tab of tabs) {
+    const view = tab.dataset.view;
+    tab.setAttribute("aria-pressed", String(view === state.view));
+    const count = view === "daily" ? reviewRecord?.snapshot.queue.length
+      : view === "familiar" ? uniqueVocab(rows).filter(({title}) => isFamiliar(reviewId(title))).length
+      : rows.filter((row) => row.view === view).length;
+    tab.querySelector("span").textContent = count === undefined ? "" : String(count);
+  }
+  $("#daily").hidden = !daily;
+  $("#toolbar").hidden = daily;
+  $("#results-info").hidden = daily;
+  $("#cards").hidden = daily;
+  if (daily) {
+    renderDaily();
+    return;
+  }
+
+  const terms = normalized(state.query).split(/\s+/).filter(Boolean);
+  const isVocab = state.view === "words" || state.view === "phrases";
+  let current = rows.filter((row) => {
+    const learned = row.id && isFamiliar(reviewId(row.title));
+    return (familiar ? learned : row.view === state.view)
+      && (!state.filter || row.priority === state.filter || row.kind?.startsWith(state.filter))
+      && (!state.pending || !isVocab || !learned)
+      && terms.every((term) => normalized(row.search).includes(term));
+  });
+  if (familiar) current = uniqueVocab(current);
+  $("#results-info").textContent = `显示 ${current.length} 条`;
+  if (!current.length) {
+    const empty = el("div", "empty");
+    if (familiar && !terms.length && !state.year) {
+      empty.append(el("p", null, reviewRecord ? "标为熟识的词汇会收在这里。" : "正在读取熟识词汇…"));
+    } else {
+      const clear = el("button", null, "清除筛选");
+      clear.type = "button";
+      clear.dataset.clear = "true";
+      empty.append(el("p", null, "当前筛选下没有条目。"), clear);
+    }
+    $("#cards").replaceChildren(empty);
+    return;
+  }
+  $("#cards").replaceChildren(...current.map(familiar ? renderVocab : renderCard[state.view]));
+}
+
+function renderDaily() {
+  const review = reviewRecord?.snapshot;
+  const current = review?.queue[0];
+  const entry = current && reviewEntries.get(current.id);
+  const slot = $("#flash-slot");
+  const complete = review ? review.goal - review.queue.length : 0;
+  $("#daily-count").textContent = review ? `已完成 ${complete} / ${review.goal} · 每天最多 20 个新词 + 到期复习` : "";
+  $("#daily-progress").hidden = !review;
+  $("#daily-progress").max = Math.max(1, review?.goal || 0);
+  $("#daily-progress").value = complete;
+  $("#daily-empty").hidden = Boolean(entry);
+  $("#review-retry").hidden = Boolean(review) || !reviewLoadFailed;
+  $("#daily-empty-message").textContent = review ? "今天的识记任务完成了。" :
+    reviewLoadFailed ? "暂时无法加载今日队列。" : "正在读取今日任务…";
+  $("#daily-empty-detail").textContent = review ? "已安排的复习词会在到期日回到队列。" : "";
+  $("#daily-actions").hidden = !entry && !review?.undo;
+  for (const button of $("#daily-actions").querySelectorAll("button")) {
+    const action = button.dataset.reviewAction;
+    button.hidden = action !== "undo" && !entry;
+    button.disabled = reviewBusy || (action === "undo" ? !review?.undo : !entry);
+  }
+  const unknown = $('[data-review-action="unknown"]');
+  const known = $('[data-review-action="known"]');
+  unknown.textContent = current?.repeats ? "不认识 · 继续巩固 →" : "不认识 · 再练三次 →";
+  known.textContent = current?.repeats ? "← 认识 · 继续巩固" : "← 认识 · 明天复习";
+
+  if (!entry) {
+    slot.replaceChildren();
+    delete slot.dataset.card;
+    return;
+  }
+  const token = `${review.day}/${current.id}/${current.repeats}`;
+  if (slot.dataset.card === token) return;
+  slot.dataset.card = token;
+  const face = el("button", "flash-face");
+  face.id = "flash-face";
+  face.type = "button";
+  face.setAttribute("aria-description", "点按展开释义和例句。左滑认识，右滑不认识。");
+  const back = el("span", "flash-back");
+  for (const row of entry.rows) back.append(cardReading(row));
+  face.append(englishText("span", "flash-term", entry.title), back);
+  revealButton(face, back);
+  wireSwipe(face, current.id);
+  if (current.repeats) {
+    slot.replaceChildren(el("span", "repeat-pill", `巩固 ${4 - current.repeats} / 3`), face);
+  } else {
+    slot.replaceChildren(face);
+  }
+}
+
+function wireSwipe(face, id) {
+  let initial;
+  face.addEventListener("pointerdown", (event) => {
+    if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
+    initial = {x: event.clientX, y: event.clientY, pointer: event.pointerId};
+    face.setPointerCapture?.(event.pointerId);
+  });
+  face.addEventListener("pointerup", (event) => {
+    if (!initial || initial.pointer !== event.pointerId) return;
+    const dx = event.clientX - initial.x;
+    const dy = event.clientY - initial.y;
+    initial = null;
+    if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+    // Suppress the synthetic click that follows a drag, without blocking taps.
+    face.dataset.draggedUntil = String(performance.now() + 350);
+    void changeReview(dx < 0 ? "known" : "unknown", id);
+  });
+  face.addEventListener("pointercancel", () => { initial = null; });
+}
+
+const REVIEW_TABLE = "joiee_english_daily_review";
+let reviewEntries = new Map();
+let reviewRecord = null;
+let reviewRequest = null;
+let reviewBusy = false;
+let reviewLoadFailed = false;
+let reviewMutation = 0;
+
+function setDailyStatus(message) {
+  $("#daily-status").textContent = message;
+}
+
+function resetReview() {
+  reviewEntries = new Map();
+  reviewRecord = null;
+  reviewRequest = null;
+  reviewBusy = false;
+  reviewLoadFailed = false;
+  reviewMutation++;
+  setDailyStatus("");
+}
+
+function initReviewEntries(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    if (!row.id) continue;
+    const id = reviewId(row.title);
+    if (!groups.has(id)) groups.set(id, {id, title: row.title, rows: []});
+    groups.get(id).rows.push(row);
+  }
+  const rank = {"先背": 0, "先辨": 1, "再补": 2};
+  const entries = [...groups.values()];
+  for (const entry of entries) {
+    entry.priority = Math.min(...entry.rows.map(({priority}) => rank[priority] ?? 3));
+    entry.repetitions = Math.max(...entry.rows.map((row) => Number(row.extension.match(/跨年复现（(\d+) 套）/)?.[1] ?? 1)));
+  }
+  entries.sort((a, b) => a.priority - b.priority || b.repetitions - a.repetitions);
+  reviewEntries = new Map(entries.map((entry) => [entry.id, entry]));
+}
+
+function isFamiliar(id) {
+  return Boolean(reviewRecord?.snapshot.items[id]?.familiar);
+}
+
+async function legacyFamiliar(owner) {
+  const {data, error} = await cloud.from("joiee_english_progress")
+    .select("item_id").eq("user_id", owner).eq("mastered", true);
+  if (error) throw error;
+  const legacyIds = new Set(data.map(({item_id}) => item_id));
+  return [...reviewEntries.values()]
+    .filter(({rows}) => rows.some((row) => legacyIds.has(row.id)))
+    .map(({id}) => id);
+}
+
+async function readReview(owner) {
+  const {data, error} = await cloud.from(REVIEW_TABLE)
+    .select("revision,snapshot").eq("user_id", owner).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function writeReview(owner, version, snapshot) {
+  const {data, error} = await cloud.from(REVIEW_TABLE)
+    .update({revision: Number(version) + 1, snapshot})
+    .eq("user_id", owner).eq("revision", version).select("revision,snapshot").maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+function updateReviewRecord(record) {
+  if (!record) throw new Error("Missing review state");
+  const changed = !reviewRecord || reviewRecord.revision !== record.revision;
+  reviewRecord = record;
+  reviewLoadFailed = false;
+  if (changed) render();
+  syncMessage("已与云端同步");
+}
+
+async function refreshReview() {
+  if (!ready || reviewBusy || reviewRequest) return;
+  const owner = activeOwner;
+  const generation = cloudVersion;
+  const mutation = reviewMutation;
+  const isCurrent = () => generation === cloudVersion && mutation === reviewMutation && !reviewBusy;
+  const request = (async () => {
+    let record = await readReview(owner);
+    if (!isCurrent()) return null;
+    const day = reviewDay();
+    const entries = [...reviewEntries.values()];
+    if (!record) {
+      const familiarIds = await legacyFamiliar(owner);
+      if (!isCurrent()) return null;
+      const snapshot = makeDailyQueue(newReviewSnapshot(familiarIds), day, entries);
+      const {data, error} = await cloud.from(REVIEW_TABLE)
+        .insert({user_id: owner, revision: 0, snapshot}).select("revision,snapshot").single();
+      if (error && error.code !== "23505") throw error;
+      record = data || await readReview(owner);
+    }
+    if (!isCurrent() || !record) return null;
+    const today = makeDailyQueue(record.snapshot, day, entries);
+    if (today !== record.snapshot) {
+      record = await writeReview(owner, record.revision, today) || await readReview(owner);
+    }
+    return record;
+  })();
+  reviewRequest = request;
+  try {
+    const fetched = await request;
+    if (fetched && isCurrent()) updateReviewRecord(fetched);
+  } catch {
+    if (isCurrent()) {
+      reviewLoadFailed = true;
+      syncMessage("暂时无法读取云端进度");
+      if (!reviewRecord && state.view === "daily") renderDaily();
+    }
+  } finally {
+    if (reviewRequest === request) reviewRequest = null;
+  }
+}
+
+async function changeReview(action, id = reviewRecord?.snapshot.queue[0]?.id) {
+  if (!ready || !reviewRecord || reviewBusy) return;
+  if (action !== "undo" && !reviewEntries.has(id)) return;
+  if (reviewRecord.snapshot.day !== reviewDay()) {
+    await refreshReview();
+    setDailyStatus("日期已切换，请在今日队列里继续。");
+    return;
+  }
+  const before = reviewRecord;
+  const after = applyReview(before.snapshot, action, id);
+  if (after === before.snapshot) return;
+
+  const generation = cloudVersion;
+  const owner = activeOwner;
+  reviewMutation++;
+  reviewBusy = true;
+  if (state.view === "daily") renderDaily();
+  syncMessage("正在保存进度…");
+  let retryRead = false;
+  try {
+    const saved = await writeReview(owner, before.revision, after);
+    if (generation !== cloudVersion) return;
+    if (!saved) {
+      const latest = await readReview(owner);
+      if (generation !== cloudVersion) return;
+      updateReviewRecord(latest);
+      setDailyStatus("另一台设备刚更新了进度，已切换到最新队列。");
+      return;
+    }
+    updateReviewRecord(saved);
+    const previousTask = before.snapshot.queue[0];
+    const remaining = after.queue.find((task) => task.id === id)?.repeats;
+    const message = {
+      undo: "已撤回上一步。",
+      familiar: "已移入熟识。",
+      restore: "已移出熟识，排进今日队尾。",
+      known: remaining ? `已回到队尾，还需巩固 ${remaining} 次。` : "已安排明天复习。",
+      unknown: remaining ? `已回到队尾，还需巩固 ${remaining} 次。`
+        : previousTask?.repeats ? "三次巩固已完成，明天再复习。" : "",
+    }[action];
+    setDailyStatus(message);
+  } catch {
+    if (generation === cloudVersion) {
+      setDailyStatus("刚才的保存未确认，正在重新读取进度。");
+      retryRead = true;
+    }
+  } finally {
+    if (generation === cloudVersion) {
+      reviewBusy = false;
+      render();
+      if (retryRead) void refreshReview();
+    }
+  }
+}
+
+function wireReview() {
+  $("#review-retry").addEventListener("click", () => { void refreshReview(); });
+  $("#daily-actions").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-review-action]");
+    if (button) void changeReview(button.dataset.reviewAction);
+  });
+  $("#daily").addEventListener("keydown", (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const action = {ArrowLeft: "known", ArrowRight: "unknown"}[event.key];
+    if (!action) return;
+    event.preventDefault();
+    void changeReview(action);
+  });
 }
 
 start();
