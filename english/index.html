@@ -194,6 +194,9 @@ progress::-moz-progress-bar { background: #427956; border-radius: 8px; }
   .daily-actions .rating { flex-basis: calc(50% - 4px); }
   .daily-actions .secondary { flex: 1 1 40%; }
 }
+.reading-origin {
+  display: block;
+}
 </style>
 
   
@@ -346,8 +349,8 @@ const $ = (selector) => document.querySelector(selector);
 const tabs = [...document.querySelectorAll("[data-view]")];
 const state = { rows: [], years: [], view: "daily", query: "", year: "", filter: "", pending: false };
 const labels = {
-  words: ["复习顺序", "全部", "先背", "先辨", "再补"],
-  phrases: ["复习顺序", "全部", "先背", "先辨", "再补"],
+  words: ["筛选", "全部", "先背", "先辨", "再补", "选项补录"],
+  phrases: ["筛选", "全部", "先背", "先辨", "再补", "选项补录"],
   writing: ["题型", "全部", "小作文", "大作文"],
 };
 
@@ -743,14 +746,17 @@ function applyReview(snapshot, action, id) {
   return next;
 }
 
-function cardReading(row) {
+function cardReading(row, sources = [row]) {
   const section = el("span", "card-reading");
   const detail = el("span", "back-reading", row.meaning);
   const quote = el("span", "quote");
   for (const excerpt of row.excerpt.split(" / ")) quote.append(englishText("span", null, excerpt));
   const extension = el("span", "extension");
   extension.append(el("span", "field-name", "拓展"), document.createTextNode(row.extension));
-  const source = el("span", "reading-source", `${row.year} · ${row.source} · 本卷 ${row.frequency} 次`);
+  const source = el("span", "reading-source");
+  for (const item of sources) {
+    source.append(el("span", "reading-origin", `${item.year} · ${item.source} · 本卷 ${item.frequency} 次`));
+  }
   section.append(detail, quote, extension, source);
   return section;
 }
@@ -826,15 +832,24 @@ function render() {
     return;
   }
 
-  const terms = normalized(state.query).split(/\s+/).filter(Boolean);
+  const query = normalized(state.query).replace(/\bincase of\b/g, "in case of").replace(/\bin term of\b/g, "in terms of")
+    .replace(/\bin respects of\b/g, "in respect of");
+  const terms = query.split(/\s+/).filter(Boolean);
   const isVocab = state.view === "words" || state.view === "phrases";
   let current = rows.filter((row) => {
     const learned = row.id && isFamiliar(reviewId(row.title));
+    const matchesFilter = state.filter === "选项补录" ? row.source.includes(" · 选项补录 · ")
+      : !state.filter || row.priority === state.filter || row.kind?.startsWith(state.filter);
     return (familiar ? learned : row.view === state.view)
-      && (!state.filter || row.priority === state.filter || row.kind?.startsWith(state.filter))
+      && matchesFilter
       && (!state.pending || !isVocab || !learned)
       && terms.every((term) => normalized(row.search).includes(term));
   });
+  if (query && (isVocab || familiar)) {
+    const relevance = (row) => normalized(row.title) === query ? 0
+      : normalized(row.title).includes(query) ? 1 : normalized(row.search).includes(query) ? 2 : 3;
+    current.sort((a, b) => relevance(a) - relevance(b));
+  }
   if (familiar) current = uniqueVocab(current);
   $("#results-info").textContent = `显示 ${current.length} 条`;
   if (!current.length) {
@@ -892,7 +907,13 @@ function renderDaily() {
   face.type = "button";
   face.setAttribute("aria-description", "点按展开释义和例句。左滑认识，右滑不认识。");
   const back = el("span", "flash-back");
-  for (const row of entry.rows) back.append(cardReading(row));
+  const readings = new Map();
+  for (const row of entry.rows) {
+    const key = JSON.stringify([row.meaning, row.excerpt, row.extension]);
+    if (!readings.has(key)) readings.set(key, []);
+    readings.get(key).push(row);
+  }
+  for (const sources of readings.values()) back.append(cardReading(sources[0], sources));
   face.append(englishText("span", "flash-term", entry.title), back);
   revealButton(face, back);
   wireSwipe(face, current.id);
